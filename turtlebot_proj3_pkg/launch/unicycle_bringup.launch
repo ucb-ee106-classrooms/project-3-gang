@@ -1,0 +1,10 @@
+<launch>
+    <arg name="noise_injection" default="true" />
+    <arg name="freeze_bearing" default="false" />
+    <arg name="estimator_type" default="oracle_observer" />
+    <param name="noise_injection" type="bool" value="$(arg noise_injection)" />
+    <param name="freeze_bearing" type="bool" value="$(arg freeze_bearing)" />
+    <param name="estimator_type" type="str" value="$(arg estimator_type)" />
+    <node name="unicycle_node" pkg="proj3_pkg" type="unicycle_node" output="screen" />
+    <node name="estimator_node" pkg="proj3_pkg" type="estimator_node.py" output="screen" />
+</launch>
