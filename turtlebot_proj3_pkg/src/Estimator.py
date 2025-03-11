@@ -250,7 +250,33 @@ class DeadReckoning(Estimator):
         if len(self.x_hat) > 0 and self.x_hat[-1][0] < self.x[-1][0]:
             # TODO: Your implementation goes here!
             # You may ONLY use self.u and self.x[0] for estimation
-            raise NotImplementedError
+
+
+            # I don't get why we can only use self.x[0]
+            u_latest = self.u[-1]
+            x_prev = self.x_hat[-1]
+            
+            phi = x_prev[1]  
+            u_L = u_latest[1] 
+            u_R = u_latest[2] 
+            
+            phi_dot = (self.r/(2*self.d))*(u_R - u_L)
+            x_dot = (self.r/2)*(u_L + u_R)*np.cos(phi)
+            y_dot = (self.r/2)*(u_L + u_R)*np.sin(phi)
+            theta_L_dot = u_L
+            theta_R_dot = u_R
+            
+            dt = u_latest[0] - x_prev[0]  
+            new_state = [
+                u_latest[0],            
+                x_prev[1] + phi_dot*dt,      
+                x_prev[2] + x_dot*dt,         
+                x_prev[3] + y_dot*dt,           
+                x_prev[4] + theta_L_dot*dt,    
+                x_prev[5] + theta_R_dot*dt      
+            ]
+            
+            self.x_hat.append(new_state)
 
 
 class KalmanFilter(Estimator):
