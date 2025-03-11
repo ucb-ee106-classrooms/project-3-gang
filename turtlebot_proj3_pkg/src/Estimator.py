@@ -281,6 +281,20 @@ class KalmanFilter(Estimator):
         self.phid = np.pi / 4
         # TODO: Your implementation goes here!
         # You may define the A, C, Q, R, and P matrices below.
+        self.A = np.eye(4)
+        self.B = np.array([
+            [self.r/2 * np.cos(self.phid), self.r/2 * np.cos(self.phid)], 
+            [self.r/2 * np.sin(self.phid), self.r/2 * np.sin(self.phid)],  
+            [1, 0],  
+            [0, 1]   
+        ]) * self.dt
+        self.C = np.array([
+            [1, 0, 0, 0], 
+            [0, 1, 0, 0]   
+        ])
+        self.Q = np.eye(4) * 0.1
+        self.R = np.eye(2) * 0.1  
+        self.P = np.eye(4) * 0.1 
 
     # noinspection DuplicatedCode
     # noinspection PyPep8Naming
@@ -288,8 +302,25 @@ class KalmanFilter(Estimator):
         if len(self.x_hat) > 0 and self.x_hat[-1][0] < self.x[-1][0]:
             # TODO: Your implementation goes here!
             # You may use self.u, self.y, and self.x[0] for estimation
-            raise NotImplementedError
-
+            u_t = self.u[-1][1:] 
+            y_t = self.y[-1][1:]  
+            x_prev = np.array(self.x_hat[-1])[[2,3,4,5]]
+            x_pred = self.A @ x_prev + self.B @ u_t
+            P_pred = self.A @ self.P @ self.A.T + self.Q
+            S = self.C @ P_pred @ self.C.T + self.R  
+            K = P_pred @ self.C.T @ np.linalg.inv(S) 
+            y_pred = self.C @ x_pred 
+            x_update = x_pred + K @ (y_t - y_pred)  
+            self.P = (np.eye(4) - K @ self.C) @ P_pred
+            new_state = [
+                self.u[-1][0], 
+                self.phid,       
+                x_update[0],   
+                x_update[1],    
+                x_update[2],     
+                x_update[3]       
+            ]
+            self.x_hat.append(new_state)
 
 # noinspection PyPep8Naming
 class ExtendedKalmanFilter(Estimator):
