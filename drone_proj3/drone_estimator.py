@@ -206,11 +206,42 @@ class DeadReckoning(Estimator):
         super().__init__(is_noisy)
         self.canvas_title = 'Dead Reckoning'
 
+    def drone_dynamics_model(self, x, u):
+        """
+            Estimates f(x, u) given x_t and u_t
+
+            x is expected to be a 6-vector (x, z, phi, x dot, z dot, phi dot)
+            
+            
+            u is expected to be a 2-vector (thrust, right wheel rot speed)
+        """
+
+        affine_vec = np.array([x[3], x[4], x[5], 0, -self.gr, 0])
+        control_vec = np.array([
+            [0, 0],
+            [0, 0],
+            [0, 0],
+            [-np.sin(x[2]) / self.m, 0],
+            [np.cos(x[2]) / self.m, 0],
+            [0, 1 / self.J]
+        ]) @ np.array(u)
+
+        return affine_vec + control_vec
+
     def update(self, _):
         if len(self.x_hat) > 0:
             # TODO: Your implementation goes here!
             # You may ONLY use self.u and self.x[0] for estimation
-            raise NotImplementedError
+            
+
+            # assume x[k], u[k] refer to the same timestep, and exactly dt seconds passes between k and k + 1
+            x_hat = np.array(self.x[0])
+            for k in range(len(self.u)):
+                u_k = np.array(self.u[k])
+
+                x_hat += self.drone_dynamics_model(x_hat, u_k) * self.dt
+            
+            self.x_hat.append(list(x_hat))
 
 # noinspection PyPep8Naming
 class ExtendedKalmanFilter(Estimator):
