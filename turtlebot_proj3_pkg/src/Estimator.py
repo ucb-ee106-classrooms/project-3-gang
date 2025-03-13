@@ -277,7 +277,7 @@ class DeadReckoning(Estimator):
                     x_prev[5] + theta_R_dot*dt      
                 ]
             
-                self.x_hat.append(list(new_state))
+            self.x_hat.append(list(new_state))
 
 
 class KalmanFilter(Estimator):
