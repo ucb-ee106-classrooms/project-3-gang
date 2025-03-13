@@ -329,25 +329,21 @@ class KalmanFilter(Estimator):
         if len(self.x_hat) > 0 and self.x_hat[-1][0] < self.x[-1][0]:
             # TODO: Your implementation goes here!
             # You may use self.u, self.y, and self.x[0] for estimation
-            u_t = self.u[-1][1:] 
-            y_t = self.y[-1][1:]  
-            x_prev = np.array(self.x_hat[-1])[[2,3,4,5]]
-            x_pred = self.A @ x_prev + self.B @ u_t
-            P_pred = self.A @ self.P @ self.A.T + self.Q
-            S = self.C @ P_pred @ self.C.T + self.R  
-            K = P_pred @ self.C.T @ np.linalg.inv(S) 
-            y_pred = self.C @ x_pred 
-            x_update = x_pred + K @ (y_t - y_pred)  
-            self.P = (np.eye(4) - K @ self.C) @ P_pred
-            new_state = [
-                self.u[-1][0], 
-                self.phid,       
-                x_update[0],   
-                x_update[1],    
-                x_update[2],     
-                x_update[3]       
-            ]
-            self.x_hat.append(new_state)
+            x_hat = np.array(self.x[0])
+            for k in range(len(self.u)):
+                u_k = np.array(self.u[k])  
+                y_k = np.array(self.y[k])  
+                x_prev = x_hat[[2, 3, 4, 5]] 
+                dt = u_k[0] - x_prev[0] 
+                x_pred = self.A @ x_prev + (self.B @ u_k[1:]) * dt
+                P_pred = self.A @ self.P @ self.A.T + self.Q
+                S = self.C @ P_pred @ self.C.T + self.R  
+                K = P_pred @ self.C.T @ np.linalg.inv(S)  
+                y_pred = self.C @ x_pred  
+                x_update = x_pred + K @ (y_k[1:] - y_pred)  
+                self.P = (np.eye(4) - K @ self.C) @ P_pred
+                x_hat = np.array([u_k[0], self.phid, x_update[0], x_update[1], x_update[2], x_update[3]])
+            self.x_hat.append(list(x_hat))
 
 # noinspection PyPep8Naming
 class ExtendedKalmanFilter(Estimator):
