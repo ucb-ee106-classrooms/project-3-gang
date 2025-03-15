@@ -32,7 +32,7 @@ def update_plot(drone_trajectory):
     return helper
 
 # Set up plotting
-plt.style.use('seaborn')
+plt.style.use('seaborn-v0_8')
 
 fig = plt.figure()
 plt.plot()

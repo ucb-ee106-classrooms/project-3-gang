@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import linalg
 plt.rcParams['font.family'] = ['Arial']
 plt.rcParams['font.size'] = 14
 
@@ -277,25 +278,90 @@ class ExtendedKalmanFilter(Estimator):
         self.A = None
         self.B = None
         self.C = None
-        self.Q = None
-        self.R = None
-        self.P = None
+        #initial guesses
+
+        #Q - process noise covariance
+        self.Q = np.array([
+            [0.1, 0, 0, 0, 0, 0],
+            [0, 0.1, 0, 0, 0, 0],
+            [0, 0, 0.1, 0, 0, 0],
+            [0, 0, 0, 0.1, 0, 0],
+            [0, 0, 0, 0, 0.1, 0],
+            [0, 0, 0, 0, 0, 0.1]
+        ])
+
+        #R - measurement noise covariance
+        self.R = np.array([
+            [1, 0],
+            [0, 1]
+        ])
+
+        #P - state covariance
+        self.P = np.array([
+            [0.3, 0, 0, 0, 0, 0],
+            [0, 0.3, 0, 0, 0, 0],
+            [0, 0, 0.5, 0, 0, 0],
+            [0, 0, 0, 0.3, 0, 0],
+            [0, 0, 0, 0, 0.3, 0],
+            [0, 0, 0, 0, 0, 0.3]
+        ])
+
 
     # noinspection DuplicatedCode
     def update(self, i):
+
         if len(self.x_hat) > 0: #and self.x_hat[-1][0] < self.x[-1][0]:
             # TODO: Your implementation goes here!
             # You may use self.u, self.y, and self.x[0] for estimation
-            raise NotImplementedError
+            
+            # p sure for EKF we use most recent estimate so I'll use x_hat[-1]
+            x_t = np.array(self.x_hat[-1])
+            u_t = np.array(self.u[-1])
+
+            x_t_1 = self.g(x_t, u_t) #state extrapolation
+            self.A = self.approx_A(x_t, u_t) #dynamics linearization
+            self.P = self.A @ self.P @ self.A.T + self.Q #covariance extrapolation
+
+            self.C = self.approx_C(x_t_1) #measurement linearization
+            K = self.P @ self.C.T @ linalg.pinv(self.C @ self.P @ self.C.T + self.R) #Kalman gain
+            x_t_1 = x_t_1 + K @ (np.array(self.y[-1]) - self.h(x_t_1, np.array(self.landmark))) #state update
+            self.P = (np.eye(6) - K @ self.C) @ self.P #covariance update
+
+            self.x_hat.append(list(x_t_1))
+
+
 
     def g(self, x, u):
-        raise NotImplementedError
+        return x + (np.array([x[3], x[4], x[5], 0, -self.gr, 0]) + np.array([
+            [0, 0],
+            [0, 0],
+            [0, 0],
+            [-np.sin(x[2]) / self.m, 0],
+            [-np.cos(x[2]) / self.m, 0],
+            [0, 1 / self.J]
+        ]) @ np.array(u)) * self.dt
+
+    # helper function
+    def dist_to_landmark(self, x):
+        return np.sqrt( (self.landmark[0] - x[0]) ** 2 + self.landmark[1] ** 2 + (self.landmark[2] - x[1]) ** 2)
 
     def h(self, x, y_obs):
-        raise NotImplementedError
+        return np.array([
+            self.dist_to_landmark(x), x[2]
+        ])
 
     def approx_A(self, x, u):
-        raise NotImplementedError
+        return np.array([
+            [1, 0, 0, 1, 0, 0],
+            [0, 1, 0, 0, 1, 0],
+            [0, 0, 1, 0, 0, 1],
+            [0, 0, -np.cos(x[2]) * u[0] * self.dt / self.m, 1, 0, 0],
+            [0, 0, -np.sin(x[2]) * u[0] * self.dt / self.m, 0, 1, 0],
+            [0, 0, 0, 0, 0, 1]
+        ])
     
     def approx_C(self, x):
-        raise NotImplementedError
+        return np.array([
+            [(x[0] - self.landmark[0]) / (self.dist_to_landmark(x)), (x[1] - self.landmark[2]) / (self.dist_to_landmark(x)), 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0]  
+        ])
