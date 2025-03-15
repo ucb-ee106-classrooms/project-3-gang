@@ -274,28 +274,78 @@ class ExtendedKalmanFilter(Estimator):
         self.canvas_title = 'Extended Kalman Filter'
         # TODO: Your implementation goes here!
         # You may define the Q, R, and P matrices below.
-        self.A = None
-        self.B = None
-        self.C = None
-        self.Q = None
-        self.R = None
-        self.P = None
-
-    # noinspection DuplicatedCode
-    def update(self, i):
-        if len(self.x_hat) > 0: #and self.x_hat[-1][0] < self.x[-1][0]:
-            # TODO: Your implementation goes here!
-            # You may use self.u, self.y, and self.x[0] for estimation
-            raise NotImplementedError
+        self.Q = np.diag([0.1, 0.1, 0.01, 0.1, 0.1, 0.01])  
+        self.R = np.diag([0.05, 0.05, 0.02])  
+        self.P = np.eye(6) * 0.1  
 
     def g(self, x, u):
-        raise NotImplementedError
+        x_next = np.copy(x)
+        dt = self.dt  
+        u1, u2 = u  
+        x_next[0] += x[3] * dt  
+        x_next[1] += x[4] * dt  
+        x_next[2] += x[5] * dt  
+        x_next[3] += (-u1 / self.m) * np.sin(x[2]) * dt  
+        x_next[4] += (-self.gr + (u1 / self.m) * np.cos(x[2])) * dt  
+        x_next[5] += (u2 / self.J) * dt  
+        return x_next
 
-    def h(self, x, y_obs):
-        raise NotImplementedError
+    def h(self, x):
+        dx = self.landmark[0] - x[0]
+        dy = self.landmark[1]  
+        dz = self.landmark[2] - x[1]  
+        d = np.sqrt(dx**2 + dy**2 + dz**2)  
+        return np.array([d, x[2]])  
 
     def approx_A(self, x, u):
-        raise NotImplementedError
-    
+        u1, _ = u
+        dt = self.dt
+        A = np.eye(6)
+        A[0, 3] = dt
+        A[1, 4] = dt
+        A[2, 5] = dt
+        A[3, 2] = - (u1 / self.m) * np.cos(x[2]) * dt  
+        A[4, 2] = - (u1 / self.m) * np.sin(x[2]) * dt  
+        return A
+
+    def approx_B(self, x):
+        dt = self.dt
+        B = np.zeros((6, 2))
+        B[3, 0] = -np.sin(x[2]) / self.m * dt  
+        B[4, 0] = np.cos(x[2]) / self.m * dt  
+        B[5, 1] = 1 / self.J * dt  
+        return B
+
     def approx_C(self, x):
-        raise NotImplementedError
+        dx = self.landmark[0] - x[0]
+        dy = self.landmark[1]  
+        dz = self.landmark[2] - x[1]  
+        d2 = dx**2 + dy**2 + dz**2
+        d = np.sqrt(d2)
+        C = np.array([
+            [-dx / d, -dy / d, -dz / d, 0, 0, 0],  
+            [0, 0, 1, 0, 0, 0]  
+        ])
+        return C
+
+    def update(self, i):
+        if len(self.x_hat) > 0:
+            x_hat = np.array(self.x[0]) if len(self.x_hat) == 1 else np.array(self.x_hat[-1])
+            for k in range(len(self.u)):
+                u_k = np.array(self.u[k])  
+                y_k = np.array(self.y[k])  
+                x_prev = x_hat  
+                dt = self.dt
+                x_pred = self.g(x_prev, u_k[1:])
+                A = self.approx_A(x_prev, u_k[1:])
+                B = self.approx_B(x_prev)
+                P_pred = A @ self.P @ A.T + self.Q  
+                C = self.approx_C(x_pred)
+                S = C @ P_pred @ C.T + self.R
+                K = P_pred @ C.T @ np.linalg.inv(S)
+                y_pred = self.h(x_pred)
+                innovation = y_k[1:] - y_pred  
+                x_update = x_pred + K @ innovation
+                self.P = (np.eye(6) - K @ C) @ P_pred  
+                x_hat = x_update
+            self.x_hat.append(x_hat.tolist())
