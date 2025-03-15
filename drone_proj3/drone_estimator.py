@@ -283,7 +283,7 @@ class ExtendedKalmanFilter(Estimator):
         #Q - process noise covariance
         self.Q = np.array([
             [0.1, 0, 0, 0, 0, 0],
-            [0, 0.1, 0, 0, 0, 0],
+            [0, 0.01, 0, 0, 0, 0],
             [0, 0, 0.1, 0, 0, 0],
             [0, 0, 0, 0.1, 0, 0],
             [0, 0, 0, 0, 0.1, 0],
@@ -337,7 +337,7 @@ class ExtendedKalmanFilter(Estimator):
             [0, 0],
             [0, 0],
             [-np.sin(x[2]) / self.m, 0],
-            [-np.cos(x[2]) / self.m, 0],
+            [np.cos(x[2]) / self.m, 0],
             [0, 1 / self.J]
         ]) @ np.array(u)) * self.dt
 
@@ -352,9 +352,9 @@ class ExtendedKalmanFilter(Estimator):
 
     def approx_A(self, x, u):
         return np.array([
-            [1, 0, 0, 1, 0, 0],
-            [0, 1, 0, 0, 1, 0],
-            [0, 0, 1, 0, 0, 1],
+            [1, 0, 0, self.dt, 0, 0],
+            [0, 1, 0, 0, self.dt, 0],
+            [0, 0, 1, 0, 0, self.dt],
             [0, 0, -np.cos(x[2]) * u[0] * self.dt / self.m, 1, 0, 0],
             [0, 0, -np.sin(x[2]) * u[0] * self.dt / self.m, 0, 1, 0],
             [0, 0, 0, 0, 0, 1]
