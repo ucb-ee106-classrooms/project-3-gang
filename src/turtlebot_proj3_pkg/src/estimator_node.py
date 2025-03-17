@@ -32,6 +32,10 @@ def spin(estimator):
 
     #print MSE
     estimator.print_accuracy()
+    
+    #print execution time for estimator
+    exec_time_sec = estimator.get_execition_time()
+    print(f'Execution time: {exec_time_sec} secs')
 
 
 def main():

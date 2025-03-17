@@ -103,6 +103,11 @@ class Estimator:
         self.sub_y = rospy.Subscriber('y', Float32MultiArray, self.callback_y)
         self.tmr_update = rospy.Timer(rospy.Duration(self.dt), self.update)
 
+        self.execution_time = 0.0
+        
+    def get_execution_time(self):
+        return self.execution_time
+
     def callback_u(self, msg):
         self.u.append(msg.data)
 
@@ -277,6 +282,7 @@ class DeadReckoning(Estimator):
             # TODO: Your implementation goes here!
             # You may ONLY use self.u and self.x[0] for estimation
 
+            start_time = rospy.Time.now()
 
             x_hat = np.array(self.x[0][1:])
             for k in range(len(self.u)):
@@ -306,6 +312,8 @@ class DeadReckoning(Estimator):
             # print(x_hat)
             self.x_hat.append([self.x[-1][0]] + list(x_hat))
 
+            end_time = rospy.Time.now()
+            self.execution_time += (end_time - start_time).to_sec()
 
 class KalmanFilter(Estimator):
     """Kalman filter estimator.
@@ -356,6 +364,7 @@ class KalmanFilter(Estimator):
         if len(self.x_hat) > 0 and self.x_hat[-1][0] < self.x[-1][0]:
             # TODO: Your implementation goes here!
             # You may use self.u, self.y, and self.x[0] for estimation
+            start_time = rospy.Time.now()
             x_hat = np.array(self.x[0])
             for k in range(len(self.u)):
                 u_k = np.array(self.u[k])  
@@ -371,6 +380,9 @@ class KalmanFilter(Estimator):
                 self.P = (np.eye(4) - K @ self.C) @ P_pred
                 x_hat = np.array([u_k[0], self.phid, x_update[0], x_update[1], x_update[2], x_update[3]])
             self.x_hat.append(list(x_hat))
+            end_time = rospy.Time.now()
+            self.execution_time += (end_time - start_time).to_sec()
+
 
 # noinspection PyPep8Naming
 class ExtendedKalmanFilter(Estimator):
@@ -447,11 +459,13 @@ class ExtendedKalmanFilter(Estimator):
     # noinspection DuplicatedCode
     def update(self, _):
         if len(self.x_hat) > 0 and self.x_hat[-1][0] < self.x[-1][0]:
-            print(self.y)
+            # print(self.y)
             # TODO: Your implementation goes here!
             # You may use self.u, self.y, and self.x[0] for estimation
             # p sure for EKF we use most recent estimate so I'll use x_hat[-1]
 
+            start_time = rospy.Time.now()
+            
             x_t = np.array(self.x_hat[-1][1:])
             u_t = np.array(self.u[-1][1:])
 
@@ -465,4 +479,7 @@ class ExtendedKalmanFilter(Estimator):
             self.P = (np.eye(5) - K @ self.C) @ self.P #covariance update
 
             self.x_hat.append([self.x[-1][0]] + list(x_t_1))
+            
+            end_time = rospy.Time.now()
+            self.execution_time += (end_time - start_time).to_sec()
 
