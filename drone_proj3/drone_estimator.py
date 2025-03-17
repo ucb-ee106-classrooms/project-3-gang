@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 from scipy import linalg
 plt.rcParams['font.family'] = ['Arial']
 plt.rcParams['font.size'] = 14
@@ -89,6 +90,12 @@ class Estimator:
                 self.data = np.load(f)
 
         self.dt = self.data[-1][0]/self.data.shape[0]
+        
+        self.execution_time = 0.0
+        
+    
+    def get_execution_time(self):
+        return self.execution_time
 
 
     def run(self):
@@ -247,6 +254,7 @@ class DeadReckoning(Estimator):
 
     def update(self, _):
         if len(self.x_hat) > 0:
+            start_time = time.perf_counter()
             # TODO: Your implementation goes here!
             # You may ONLY use self.u and self.x[0] for estimation
             
@@ -259,6 +267,9 @@ class DeadReckoning(Estimator):
                 x_hat += self.drone_dynamics_model(x_hat, u_k) * self.dt
             
             self.x_hat.append(list(x_hat))
+            end_time  = time.perf_counter()
+            self.execution_time += (end_time - start_time)
+
 
 # noinspection PyPep8Naming
 class ExtendedKalmanFilter(Estimator):
@@ -330,6 +341,8 @@ class ExtendedKalmanFilter(Estimator):
             # TODO: Your implementation goes here!
             # You may use self.u, self.y, and self.x[0] for estimation
             
+            start_time = time.perf_counter()
+            
             # p sure for EKF we use most recent estimate so I'll use x_hat[-1]
             x_t = np.array(self.x_hat[-1])
             u_t = np.array(self.u[-1])
@@ -344,6 +357,10 @@ class ExtendedKalmanFilter(Estimator):
             self.P = (np.eye(6) - K @ self.C) @ self.P #covariance update
 
             self.x_hat.append(list(x_t_1))
+            
+            end_time = time.perf_counter()
+            self.execution_time += (end_time - start_time)
+
 
 
 
