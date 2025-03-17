@@ -30,6 +30,9 @@ def spin(estimator):
         cache_frame_data=False)
     plt.show(block=True)  # This functions the same as rospy.spin()
 
+    #print MSE
+    estimator.print_accuracy()
+
 
 def main():
     """Entry point of the estimator node.

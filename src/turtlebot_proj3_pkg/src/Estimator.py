@@ -199,6 +199,22 @@ class Estimator:
         ylim = ax.get_ylim()
         ax.set_ylim([min(min(y) * 1.05, ylim[0]), max(max(y) * 1.05, ylim[1])])
 
+    def print_accuracy(self):
+        valid_timesteps = len(self.x)
+
+        xs = np.array(self.x)
+        # xs_timesteps = xs[:, 0]
+        xs = xs[:, 1:]
+        x_hats = np.array(self.x_hat)
+        # x_hats_timesteps = x_hats[:, 0]
+        x_hats = x_hats[:valid_timesteps, 1:]
+        # print(xs_timesteps, x_hats_timesteps, flush=True)
+
+       
+        RMSE = np.sqrt(np.mean(np.power(xs - x_hats, 2), axis = 0))
+
+        print(f"RMSE: {RMSE}")
+
 
 class OracleObserver(Estimator):
     """Oracle observer which has access to the true state.
