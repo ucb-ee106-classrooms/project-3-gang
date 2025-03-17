@@ -33,6 +33,9 @@ def spin(estimator):
     plt.show(block=True)
 
     estimator.print_accuracy()
+    
+    exec_time_sec = estimator.get_execition_time()
+    print(f'Execution time: {exec_time_sec} secs')
 
 
 def main():
