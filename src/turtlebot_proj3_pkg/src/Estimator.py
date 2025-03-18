@@ -365,6 +365,7 @@ class KalmanFilter(Estimator):
             # TODO: Your implementation goes here!
             # You may use self.u, self.y, and self.x[0] for estimation
             start_time = rospy.Time.now()
+
             x_hat = np.array(self.x[0])
             for k in range(len(self.u)):
                 u_k = np.array(self.u[k])  
@@ -380,6 +381,7 @@ class KalmanFilter(Estimator):
                 self.P = (np.eye(4) - K @ self.C) @ P_pred
                 x_hat = np.array([u_k[0], self.phid, x_update[0], x_update[1], x_update[2], x_update[3]])
             self.x_hat.append(list(x_hat))
+
             end_time = rospy.Time.now()
             self.execution_time += (end_time - start_time).to_sec()
 

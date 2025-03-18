@@ -34,7 +34,7 @@ def spin(estimator):
 
     estimator.print_accuracy()
     
-    exec_time_sec = estimator.get_execition_time()
+    exec_time_sec = estimator.get_execution_time()
     print(f'Execution time: {exec_time_sec} secs')
 
 
